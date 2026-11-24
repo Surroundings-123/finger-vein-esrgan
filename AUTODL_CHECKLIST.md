@@ -35,7 +35,7 @@ export KAGGLE_API_TOKEN=KGAT_你的token
 bash setup_autodl.sh
 ```
 
-> 脚本会自动：检查 CUDA → 装依赖（basicsr/opencv/sklearn/tqdm/kaggle）→ 配 Kaggle token → 建目录 → patch basicsr → 验证模型可导入。
+> 脚本会自动：检查 CUDA → 装依赖（numpy<2/opencv<5/sklearn/tqdm/kaggle）→ 配 Kaggle token → 建目录 → 验证模型可导入。
 
 ---
 

@@ -9,16 +9,17 @@
 
 set -e
 
-echo "===== [1/6] 检查 GPU 与 PyTorch ====="
+echo "===== [1/5] 检查 GPU 与 PyTorch ====="
 nvidia-smi || echo "警告：未检测到 GPU"
 python -c "import torch; print('torch', torch.__version__); print('CUDA:', torch.cuda.is_available()); print('GPU:', torch.cuda.get_device_name(0) if torch.cuda.is_available() else 'N/A')"
 
 echo ""
-echo "===== [2/6] 安装依赖（阿里云镜像加速） ====="
-pip install basicsr opencv-python scikit-learn tqdm matplotlib scipy kaggle -i https://mirrors.aliyun.com/pypi/simple/
+echo "===== [2/5] 安装依赖（numpy<2 + opencv<5 以兼容 torch） ====="
+pip install -U pip -i https://pypi.tuna.tsinghua.edu.cn/simple/
+pip install "numpy<2" "opencv-python<5" scikit-learn tqdm matplotlib scipy kaggle -i https://pypi.tuna.tsinghua.edu.cn/simple/
 
 echo ""
-echo "===== [3/6] 配置 Kaggle token ====="
+echo "===== [3/5] 配置 Kaggle token ====="
 if [ -n "$KAGGLE_API_TOKEN" ]; then
     mkdir -p ~/.kaggle
     echo "$KAGGLE_API_TOKEN" > ~/.kaggle/access_token
@@ -31,37 +32,14 @@ else
 fi
 
 echo ""
-echo "===== [4/6] 创建数据/输出目录 ====="
+echo "===== [4/5] 创建数据/输出目录 ====="
 mkdir -p /root/autodl-tmp/fvsyn checkpoints_vein checkpoints_esrgan landmarks frames
 echo "已创建：/root/autodl-tmp/fvsyn + checkpoints_vein/checkpoints_esrgan/landmarks/frames"
 
 echo ""
-echo "===== [5/6] 修复 basicsr 与新版 torchvision 兼容性 ====="
-python - <<'PY'
-import pathlib, torchvision
-try:
-    import basicsr
-except ImportError:
-    print("basicsr 未安装，跳过 patch")
-    raise SystemExit
-major, minor = (int(x) for x in torchvision.__version__.split('.')[:2])
-if (major, minor) >= (0, 26):
-    p = pathlib.Path(basicsr.__file__).parent / 'data' / 'degradations.py'
-    old = "from torchvision.transforms.functional_tensor import rgb_to_grayscale"
-    new = "from torchvision.transforms.functional import rgb_to_grayscale"
-    if p.exists() and old in p.read_text():
-        p.write_text(p.read_text().replace(old, new))
-        print(f"已 patch: {p}")
-    else:
-        print("无需 patch（已修复或版本不同）")
-else:
-    print(f"torchvision {torchvision.__version__} 无需 patch")
-PY
-
-echo ""
-echo "===== [6/6] 验证导入 ====="
+echo "===== [5/5] 验证导入 ====="
 python -c "from models import IRCNN, MTCNN, RRDBNet, VGGStyleDiscriminator; print('模型导入成功')"
-python -c "import cv2, sklearn, tqdm, basicsr; print('依赖导入成功')"
+python -c "import cv2, sklearn, tqdm, scipy, numpy; print('依赖导入成功, numpy', numpy.__version__)"
 
 echo ""
 echo "========== 配置完成 =========="

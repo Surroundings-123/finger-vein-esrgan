@@ -60,10 +60,10 @@ default/
 ## 三、环境要求
 
 - Python 3.11 + PyTorch 2.x（CUDA）
-- 依赖：`torchvision`、`numpy`、`opencv-python`、`matplotlib`、`tqdm`、`scikit-learn`、`scipy`、`basicsr`（ESRGAN 用）
+- 依赖：`torchvision`、`numpy`、`opencv-python`、`matplotlib`、`tqdm`、`scikit-learn`、`scipy`
 
 ```bash
-pip install basicsr opencv-python scikit-learn tqdm -i https://mirrors.aliyun.com/pypi/simple/
+pip install "numpy<2" "opencv-python<5" scikit-learn tqdm matplotlib scipy kaggle -i https://pypi.tuna.tsinghua.edu.cn/simple/
 ```
 
 > 本地 Windows 环境是独立 Python 3.11（非 conda 管理），位于 `C:\Users\hj\.conda\envs\patent`。本地用 `& $PY` 全路径调用、用 `& $PY -m pip` 装依赖，不走 conda。
