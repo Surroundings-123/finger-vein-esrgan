@@ -7,7 +7,7 @@
 
 为规避 Kaggle 下载端点限流：
     - 并发降到 3
-    - 失败按状态码退避重试（最多 3 次）
+    - 失败按状态码退避重试（429 限流等 60 秒，最多 30 次）
 
 数据布局（下载后，可直接对接 prepare_fingerveinsyn.py）：
     {out_dir}/
@@ -90,22 +90,23 @@ def main():
         if os.path.exists(path) and os.path.getsize(path) > 0:
             return True, 200
         url = BASE + "?file_name=" + requests.utils.quote(name, safe="")
-        for attempt in range(3):
+        for attempt in range(30):
             try:
                 r = requests.get(url, auth=auth, timeout=120)
                 if r.status_code == 200:
                     with open(path, "wb") as fp:
                         fp.write(r.content)
                     return True, 200
-                if r.status_code in (429, 500, 502, 503, 504):
-                    time.sleep(2 * (attempt + 1))
+                if r.status_code == 429:
+                    time.sleep(60)  # 限流：等 60 秒再试，自动跨过限流窗口
+                    continue
+                if r.status_code in (500, 502, 503, 504):
+                    time.sleep(10)
                     continue
                 return False, r.status_code
             except Exception:
-                if attempt < 2:
-                    time.sleep(2 * (attempt + 1))
-                    continue
-                return False, -1
+                time.sleep(10)
+                continue
         return False, -1
 
     print("[2/2] 并发下载（3 线程，限流自动重试）...")
