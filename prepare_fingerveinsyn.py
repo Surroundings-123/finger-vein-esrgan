@@ -65,13 +65,17 @@ def main():
             img_path = os.path.join(dirpath, fname)
             rel = os.path.relpath(img_path, raw_dir)
             xml_path = os.path.join(ann_dir, os.path.splitext(rel)[0] + ".xml")
+            m = re.match(r"(\d+)_", fname)
+            subject = m.group(1) if m else "unknown"
+
+            # 无 XML 标注时：仅做身份分类路线（不生成 landmark）
             if not os.path.exists(xml_path):
-                print("[跳过] 缺标注:", rel)
+                n_img += 1
+                rows.append({"path": img_path, "subject": subject,
+                             "finger": "fv", "session": "0"})
                 continue
 
             n_img += 1
-            m = re.match(r"(\d+)_", fname)
-            subject = m.group(1) if m else "unknown"
             bbox, pts = parse_annotation(xml_path)
             n_ann += 1
             if n_pts is None:
@@ -91,9 +95,13 @@ def main():
         w.writerows(rows)
 
     ids = sorted({r["subject"] for r in rows})
-    print(f"图片 {n_img} 张 / 标注 {n_ann} 份 / 身份 {len(ids)} 个 / 每份 {n_pts} 个关键点")
-    print(f"每个 .npy 形状: {4 + (n_pts or 0) * 2} (=4 bbox + {n_pts}*2)")
-    print(f"产物: {args.out_csv} + {args.landmark_dir}/*.npy")
+    if n_pts is None:
+        print(f"图片 {n_img} 张 / 标注 {n_ann} 份 / 身份 {len(ids)} 个（无 landmark 标注，仅身份分类路线）")
+        print(f"产物: {args.out_csv}")
+    else:
+        print(f"图片 {n_img} 张 / 标注 {n_ann} 份 / 身份 {len(ids)} 个 / 每份 {n_pts} 个关键点")
+        print(f"每个 .npy 形状: {4 + n_pts * 2} (=4 bbox + {n_pts}*2)")
+        print(f"产物: {args.out_csv} + {args.landmark_dir}/*.npy")
 
 
 if __name__ == "__main__":
