@@ -32,3 +32,4 @@ tmp/
 # ===== 密钥（切勿提交） =====
 kaggle.json
 ~/.kaggle/
+HANDOFF.md
