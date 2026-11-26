@@ -4,8 +4,8 @@
 # 用法（在项目根目录，即含 models/ 和 *.py 的那层执行）：
 #   bash setup_autodl.sh
 #
-# 可选：先导出 Kaggle token 以自动配置下载凭证：
-#   export KAGGLE_API_TOKEN=KGAT_xxx && bash setup_autodl.sh
+# 可选：先导出 Kaggle 凭证以自动配置下载认证（kaggle.json: username + key）：
+#   export KAGGLE_USERNAME=surroundings KAGGLE_KEY=xxx && bash setup_autodl.sh
 
 set -e
 
@@ -19,16 +19,18 @@ pip install -U pip -i https://pypi.tuna.tsinghua.edu.cn/simple/
 pip install "numpy<2" "opencv-python<5" scikit-learn tqdm matplotlib scipy kaggle -i https://pypi.tuna.tsinghua.edu.cn/simple/
 
 echo ""
-echo "===== [3/5] 配置 Kaggle token ====="
-if [ -n "$KAGGLE_API_TOKEN" ]; then
+echo "===== [3/5] 配置 Kaggle 认证（kaggle.json: username + key） ====="
+if [ -n "$KAGGLE_USERNAME" ] && [ -n "$KAGGLE_KEY" ]; then
     mkdir -p ~/.kaggle
-    echo "$KAGGLE_API_TOKEN" > ~/.kaggle/access_token
-    chmod 600 ~/.kaggle/access_token
-    echo "已写入 ~/.kaggle/access_token"
-    kaggle datasets list 2>/dev/null | head -5 || echo "（token 已写入，可手动运行 kaggle datasets list 验证）"
+    printf '{"username":"%s","key":"%s"}\n' "$KAGGLE_USERNAME" "$KAGGLE_KEY" > ~/.kaggle/kaggle.json
+    chmod 600 ~/.kaggle/kaggle.json
+    echo "已写入 ~/.kaggle/kaggle.json"
+    echo "可运行: kaggle datasets list 验证"
 else
-    echo "未设置 KAGGLE_API_TOKEN，跳过。需要下载数据时执行："
-    echo "  mkdir -p ~/.kaggle && echo <KGAT_xxx> > ~/.kaggle/access_token && chmod 600 ~/.kaggle/access_token"
+    echo "未设置 KAGGLE_USERNAME / KAGGLE_KEY，跳过。需要下载数据时手动执行："
+    echo '  mkdir -p ~/.kaggle'
+    echo '  将 {"username":"surroundings","key":"<你的API Key>"} 写入 ~/.kaggle/kaggle.json'
+    echo "  chmod 600 ~/.kaggle/kaggle.json"
 fi
 
 echo ""
