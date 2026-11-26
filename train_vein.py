@@ -150,8 +150,11 @@ def evaluate(model, loader, criterion, device, use_landmark, w_lm):
     return loss_sum / total, correct / total
 
 
-def evaluate_invariance(model, samples, id2idx, device, batch_size, num_workers=0):
-    """在不同旋转/缩放下评估，验证尺度旋转不变性"""
+def evaluate_invariance(model, samples, id2idx, device, batch_size, size, num_workers=0):
+    """在不同旋转/缩放下评估，验证尺度旋转不变性
+
+    size 必须与训练时一致（(H, W)），否则输入尺寸错位会导致准确率暴跌。
+    """
     configs = [
         ("原图", None, None),
         ("旋转+15°", 15.0, None),
@@ -164,7 +167,8 @@ def evaluate_invariance(model, samples, id2idx, device, batch_size, num_workers=
     criterion = nn.CrossEntropyLoss()
     print("\n==== 尺度旋转不变性验证 ====")
     for name, angle, scale in configs:
-        ds = VeinDataset(samples, id2idx, fixed_angle=angle, fixed_scale=scale)
+        ds = VeinDataset(samples, id2idx, size=size, to_rgb=True,
+                         fixed_angle=angle, fixed_scale=scale)
         loader = DataLoader(ds, batch_size=batch_size, shuffle=False, num_workers=num_workers)
         _, acc = evaluate(model, loader, criterion, device, False, 0.0)
         print(f"  {name:16s} 准确率 {acc:.4f}")
@@ -260,7 +264,7 @@ def main():
         model.load_state_dict(torch.load(os.path.join(args.out_dir, "best.pth"),
                                           map_location=device))
         evaluate_invariance(model, val_samples, id2idx, device,
-                            args.batch_size, args.num_workers)
+                            args.batch_size, img_size, args.num_workers)
 
 
 if __name__ == "__main__":
